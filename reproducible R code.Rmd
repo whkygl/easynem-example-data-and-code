@@ -1,0 +1,237 @@
+---
+title: "sample_code"
+author: "Wang Kunguang"
+date: "2026-01-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Easynem Introduction
+
+This R package has a built-in Nemaplex database for nematodes, which can be used to search for various nematodes. At the same time, this R package supports various nematode communities and functional analyses such as nematode diversity, maturity index, metabolic footprint, and functional guild. For the source code of this package, see <https://github.com/whkygl/easynem>.
+
+## Install and load easynem
+
+```{r}
+# devtools::install_github("whkygl/easynem")
+# install.packages("easynem")
+library(easynem)
+```
+
+## Fig. 1 A
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+nem <- read_nem2(tab = nemtab,
+                 tax = nemtax,
+                 meta = nemmeta)
+# Summary by food type
+nem_feeding = nem |> trans_name(feeding)
+colnames(nem_feeding@meta) <- sapply(colnames(nem_feeding@meta), function(x) {
+  if (grepl("^[0-9]+$", x)) {
+    paste0("f", x)
+  } else {
+    x
+  }
+})
+nem_feeding@meta$Treatments = factor(nem_feeding@meta$Treatments,
+                                     levels = c("CK", "C2", "C4", "C8"))
+# Calculation of bacteria-feeding nematode abundance
+p = nem_feeding |>
+     calc_compare(.group = Treatments, y = f3, method = LSD) |>
+     nem_plot(type = 2, add = "mean_se")
+p = p + ylab("Bacterivores\n(Ind. / 100 g dry soil)")
+p     
+```
+
+## Fig. 1 B
+
+```{r}
+# Calculation of fungivorous nematode abundance
+p = nem_feeding |>
+  calc_compare(.group = Treatments, y = f2, method = LSD) |>
+  nem_plot(type = 2, add = "mean_se")
+p = p + ylab("Fungivores\n(Ind. / 100 g dry soil)")
+p
+```
+
+## Fig. 1 C
+
+```{r}
+# Calculation of herbivorous nematodes nematode abundance
+p = nem_feeding |>
+  calc_compare(.group = Treatments, y = f1, method = LSD) |>
+  nem_plot(type = 2, add = "mean_se")
+p = p + ylab("Plant parasites\n(Ind. / 100 g dry soil)")
+p
+```
+
+## Fig. 1 D
+
+```{r}
+# Calculation of Omnivorous or predatory nematode abundance
+p = nem_feeding |>
+  trans_combine(c("f5", "f8")) |> 
+  calc_compare(.group = Treatments, y = f5_f8, method = LSD) |>
+  nem_plot(type = 2, add = "mean_se")
+p = p + ylab("Omnivores/predators\n(Ind. / 100 g dry soil)")
+p
+```
+
+## Fig. 1 E
+
+```{r}
+# Draw a ternary diagram by feeding.
+p <- nem |>
+  calc_ter(Treatments) |>
+  nem_plot(type = feeding, clockwise = FALSE)
+p
+```
+
+## Fig. 1 F
+
+```{r}
+# Draw a ternary diagram by cp value.
+p <- nem |>
+  calc_ter(Treatments) |>
+  nem_plot(type = cp, clockwise = FALSE)
+p
+```
+
+## Fig. 2 A
+
+```{r}
+# Calculate Maturity Index (MI)
+nem_index <- nem |> calc_nemindex()
+nem_index@meta$Treatments = factor(nem_feeding@meta$Treatments,
+                                     levels = c("CK", "C2", "C4", "C8"))
+p = nem_index |> 
+  calc_compare(Treatments, MI, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Maturity Index")
+p
+```
+
+## Fig. 2 B
+
+```{r}
+# Calculate Plant-Parasitic Index (PPI)
+p = nem_index |> 
+  calc_compare(Treatments, PPI, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Plant-Parasitic Index")
+p
+```
+
+## Fig. 2 C
+```{r}
+# Calculate Nematode Wasilewska Index (WI)
+p = nem_index |> 
+  calc_compare(Treatments, WI, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Wasilewska Index")
+p
+```
+
+## Fig. 2 D
+
+```{r}
+# Calculate Nematode Channel Ratio (NCR)
+p = nem_index |> 
+  calc_compare(Treatments, NCR, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Nematode Channel Ratio")
+p
+```
+
+## Fig. 2 E
+
+```{r}
+# Calculate Channel index (CI)
+p = nem_index |> 
+  calc_compare(Treatments, CI, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Channel Index")
+p
+```
+
+## Fig. 2 F
+
+```{r}
+# Calculate Basal index (BI)
+p = nem_index |> 
+  calc_compare(Treatments, BI, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Basal Index")
+p
+```
+
+## Fig. 3 A
+
+```{r}
+# Calculate bacterivores metabolic footprint (BaF)
+p = nem_index |> 
+  calc_compare(Treatments, BacterivoreFootprint, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Bacterivores metabolic footprint\n(μg / 100 g dry soil)")
+p
+```
+
+## Fig. 3 B
+
+```{r}
+# Calculate fungivores metabolic footprint (FuF)
+p = nem_index |> 
+  calc_compare(Treatments, FungivoreFootprint, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Fungivores metabolic footprint\n(μg / 100 g dry soil)")
+p
+```
+
+## Fig. 3 C
+
+```{r}
+# Calculate plant parasites metabolic footprint (PpF)
+p = nem_index |> 
+  calc_compare(Treatments, HerbivoreFootprint, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Plant parasites metabolic footprint\n(μg / 100 g dry soil)")
+p
+```
+
+## Fig. 3 D
+
+```{r}
+# Calculate omnivores/predators metabolic footprint (OpF)
+p = nem_index |> 
+  calc_compare(Treatments, PrOmFootprint, method = LSD) |> 
+  nem_plot(type = 2, add = "mean_se") +
+  ylab("Omnivores/predators metabolic footprint\n(μg / 100 g dry soil)")
+p
+```
+
+## Fig. 3 E
+
+```{r}
+# Faunal analysis of soil food web
+p <- nem |>
+  calc_nemindex() |>
+  calc_mf(Treatments) |>
+  nem_plot(kei = 20, ksi = 20)
+p
+```
+
+## Fig.3 G
+
+```{r}
+nem@meta$Treatments = factor(nem@meta$Treatments, levels = c("CK", "C2", "C4", "C8"))
+p <- nem |>
+  calc_nemindex() |>
+  calc_ef(Treatments) |>
+  nem_plot()
+p
+```
